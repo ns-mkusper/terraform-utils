@@ -12,6 +12,8 @@ Then use the `terraform.tfstate.json` as the `<state-file>` for the following us
 
 ## Use cases
 
+You can clone the repo and run scripts individually or use the following one-liners directly.
+
 ### generate terraform imports for all resources
 
 ```bash
