@@ -57,7 +57,7 @@ echo "$LIST" | while IFS= read -r entry; do
   
   # Use terraform state show to get the details of the entry
   # and use awk to extract the ID
-  id=$(terraform state show -state=$STATE_FILE $entry | awk '/^ *id[[:space:]]*=[[:space:]]*"/ {print $3}')
+  id=$(terraform state show -state=$STATE_FILE $entry | awk '/^ *id[[:space:]]*=[[:space:]]*"/ {print $3; exit}'
   if [[ -z $id || $id == "null" ]]; then
     id="\"not found\""
   else
