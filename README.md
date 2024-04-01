@@ -1,8 +1,10 @@
 # terraform-utils
 
-Better Terraform CLI experience with real usecases.
+Better Terraform CLI experience with real use cases.
 
 ## Usage
+
+First, pull the terraform state file from the remote.
 
 ```bash
 terraform state pull > terraform.tfstate.json
