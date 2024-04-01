@@ -19,13 +19,24 @@ You can clone the repo and run scripts individually or use the following one-lin
 ### generate terraform imports for all resources
 
 ```bash
-curl -sSL "https://raw.githubusercontent.com/amazingandyyy/terraform-utils/main/terraform-imports-generate.sh" | bash -s -- <state-file> <output-file>
+## Handle resources id edge cases for `terraform-imports-generate`
+- use "$role/$policy_arn" for aws_iam_role_policy_attachmenat
+- use ""$id:$type"" newrelic_nrql_alert_condition
+
+## Usage
+
+```bash
+TF_UTIL_VERSION=1.1.0
+curl -sSL "https://raw.githubusercontent.com/amazingandyyy/terraform-utils/$TF_UTIL_VERSION/terraform-imports-generate.sh" | bash -s -- <state-file> <output-file>
+```
+
 ```
 
 ### terraform list with ids
 
 ```bash
-curl -sSL "https://raw.githubusercontent.com/amazingandyyy/terraform-utils/main/terraform-state-list-ids.sh" | bash -s -- <state-file>
+TF_UTIL_VERSION=1.1.0
+curl -sSL "https://raw.githubusercontent.com/amazingandyyy/terraform-utils/$TF_UTIL_VERSION/terraform-state-list-ids.sh" | bash -s -- <state-file>
 ```
 
 ## LICENSE
