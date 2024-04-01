@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Usage: terraform-generate-imports <state-file> <output-file>
+# Usage: terraform-imports-generate <state-file> <output-file>
 # error out if the number of arguments is not 2
 if [ $# -ne 2 ]; then
   echo "Usage: $0 <state-file> <output-file>"
