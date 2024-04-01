@@ -19,12 +19,19 @@ function found_terraform_resource_id() {
   # Use terraform state show to get the details of the entry
   if [[ $entry == *.aws_iam_role_policy_attachment.* ]]; then
     # Extract role and policy_arn for aws_iam_role_policy_attachment resources, removing quotes
+    # See https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy_attachment#import
     role=$(terraform state show -state=$state "$entry" | awk '/^ *role[[:space:]]*=[[:space:]]*"/ {print $3; exit}' | sed 's/^"//;s/"$//')
     policy_arn=$(terraform state show -state=$state "$entry" | awk '/^ *policy_arn[[:space:]]*=[[:space:]]*"/ {print $3; exit}' | sed 's/^"//;s/"$//')
     attribute="$role/$policy_arn"
+  elif [[ $entry == *.newrelic_nrql_alert_condition.* ]]; then
+    # Extract role and policy_arn for aws_iam_role_policy_attachment resources, removing quotes
+    # See https://registry.terraform.io/providers/newrelic/newrelic/latest/docs/resources/nrql_alert_condition#import
+    id=$(terraform state show -state=$state "$entry" | awk '/^ *id[[:space:]]*=[[:space:]]*"/ {print $3; exit}' | sed 's/^"//;s/"$//')
+    type=$(terraform state show -state=$state "$entry" | awk '/^ *type[[:space:]]*=[[:space:]]*"/ {print $3; exit}' | sed 's/^"//;s/"$//')
+    attribute="$id:$type"
   else
     # Default to extracting id for all other resource types, removing quotes
-        attribute=$(terraform state show -state=$state "$entry" | awk '/^ *id[[:space:]]*=[[:space:]]*"/ {print $3; exit}' | sed 's/^"//;s/"$//' | sed 's/`//g')
+    attribute=$(terraform state show -state=$state "$entry" | awk '/^ *id[[:space:]]*=[[:space:]]*"/ {print $3; exit}' | sed 's/^"//;s/"$//' | sed 's/`//g')
   fi
 
   echo "$attribute"
@@ -54,11 +61,29 @@ echo "$LIST" | while IFS= read -r entry; do
   let total_items+=1
   
   # Check for and skip certain entries
-  if [[ $entry == data.* ]] || [[ $entry == *".data."* ]] || [[ $entry == module.metadata.* ]]; then
+  if [[ $entry == data.* ]] || [[ $entry == *".data."* ]]; then
     let skipped_items+=1
     echo "$total_items Skipping entry: $entry"
     echo "# $entry" >> "$OUTPUT_FILE"
-    echo "# skip importing data or metadata" >> "$OUTPUT_FILE"
+    echo "# skip importing data resource" >> "$OUTPUT_FILE"
+    echo "" >> "$OUTPUT_FILE"
+    continue
+  fi
+
+  if [[ $entry == module.metadata.* ]]; then
+    let skipped_items+=1
+    echo "$total_items Skipping entry: $entry"
+    echo "# $entry" >> "$OUTPUT_FILE"
+    echo "# skip importing metadata" >> "$OUTPUT_FILE"
+    echo "" >> "$OUTPUT_FILE"
+    continue
+  fi
+
+  if [[ $entry == *".random_password."* ]]; then
+    let skipped_items+=1
+    echo "$total_items Skipping entry: $entry"
+    echo "# $entry" >> "$OUTPUT_FILE"
+    echo "# skip importing password" >> "$OUTPUT_FILE"
     echo "" >> "$OUTPUT_FILE"
     continue
   fi
