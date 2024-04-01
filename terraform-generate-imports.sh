@@ -26,21 +26,21 @@ function found_terraform_resource_id() {
   elif [[ $entry == *.newrelic_nrql_alert_condition.* ]]; then
     # Extract role and policy_arn for newrelic_nrql_alert_condition resources, removing quotes
     # See https://registry.terraform.io/providers/newrelic/newrelic/latest/docs/resources/nrql_alert_condition#import
-    id=$(terraform state show -state=$state "$entry" | awk '/^ *id[[:space:]]*=[[:space:]]*"/ {print $3; exit}' | sed 's/^"//;s/"$//')
+    id=$(terraform state show -state="$state" "$entry" | awk '/^ *id[[:space:]]*=[[:space:]]*/ { gsub(/"/, "", $3); print $3; exit}')
     type=$(terraform state show -state=$state "$entry" | awk '/^ *type[[:space:]]*=[[:space:]]*"/ {print $3; exit}' | sed 's/^"//;s/"$//')
     attribute="$id:$type"
   elif [[ $entry == *.newrelic_alert_policy.* ]]; then
     # Extract role and policy_arn for newrelic_alert_policy resources, removing quotes
     # See https://registry.terraform.io/providers/newrelic/newrelic/latest/docs/resources/newrelic_alert_policy#import
-    id=$(terraform state show -state=$state "$entry" | awk '/^ *id[[:space:]]*=[[:space:]]*"/ {print $3; exit}' | sed 's/^"//;s/"$//')
-    account_id=$(terraform state show -state=$state "$entry" | awk '/^ *account_id[[:space:]]*=[[:space:]]*"/ {print $3; exit}' | sed 's/^"//;s/"$//')
+    id=$(terraform state show -state="$state" "$entry" | awk '/^ *id[[:space:]]*=[[:space:]]*/ { gsub(/"/, "", $3); print $3; exit}')
+    account_id=$(terraform state show -state="$state" "$entry" | awk '/^ *account_id[[:space:]]*=[[:space:]]*/ { gsub(/"/, "", $3); print $3; exit}')
     attribute="$id:$account_id"
   elif [[ $entry == *.mysql_grant.* ]]; then
     # transform payments_adhoc_write@%:`payments`:* to payments_adhoc_write@%@payments@*
     attribute=$(terraform state show -state=$state "$entry" | awk '/^ *id[[:space:]]*=[[:space:]]*"/ {print $3; exit}' | sed -e 's/^"//' -e 's/"$//' | sed -e 's/:\`/@/g' -e 's/\`:/@/g')
   else
     # Default to extracting id for all other resource types, removing quotes
-    attribute=$(terraform state show -state=$state "$entry" | awk '/^ *id[[:space:]]*=[[:space:]]*"/ {print $3; exit}' | sed 's/^"//;s/"$//')
+    attribute=$(terraform state show -state="$state" "$entry" | awk '/^ *id[[:space:]]*=[[:space:]]*/ { gsub(/"/, "", $3); print $3; exit}')
   fi
 
   echo "$attribute"
