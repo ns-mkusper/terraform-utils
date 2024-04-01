@@ -51,8 +51,6 @@ total_found=$(echo "$LIST" | wc -l | xargs) # Total items found in the state fil
 
 # Initialize counters
 total_items=0
-skipped_items=0
-id_found_items=0
 
 echo "Start processing $total_found items found in the state file $STATE_FILE..."
 
@@ -62,7 +60,6 @@ echo "$LIST" | while IFS= read -r entry; do
   
   # Check for and skip certain entries
   if [[ $entry == data.* ]] || [[ $entry == *".data."* ]]; then
-    let skipped_items+=1
     echo "$total_items Skipping entry: $entry"
     echo "# $entry" >> "$OUTPUT_FILE"
     echo "# skip importing data resource" >> "$OUTPUT_FILE"
@@ -71,7 +68,6 @@ echo "$LIST" | while IFS= read -r entry; do
   fi
 
   if [[ $entry == module.metadata.* ]]; then
-    let skipped_items+=1
     echo "$total_items Skipping entry: $entry"
     echo "# $entry" >> "$OUTPUT_FILE"
     echo "# skip importing metadata" >> "$OUTPUT_FILE"
@@ -80,7 +76,6 @@ echo "$LIST" | while IFS= read -r entry; do
   fi
 
   if [[ $entry == *".random_password."* ]]; then
-    let skipped_items+=1
     echo "$total_items Skipping entry: $entry"
     echo "# $entry" >> "$OUTPUT_FILE"
     echo "# skip importing password" >> "$OUTPUT_FILE"
@@ -93,8 +88,6 @@ echo "$LIST" | while IFS= read -r entry; do
 
   if [[ -z $attribute || $attribute == "null" ]]; then
     attribute="not found"
-  else
-    let id_found_items+=1
   fi
   
   echo "$total_items Resource attribute of $entry is $attribute"
@@ -106,9 +99,3 @@ echo "$LIST" | while IFS= read -r entry; do
   echo "}" >> "$OUTPUT_FILE"
   echo "" >> "$OUTPUT_FILE"
 done
-
-# Print summary information
-echo "Summary:"
-echo "Total items processed: $total_items"
-echo "Skipped items: $skipped_items"
-echo "Items with attribute found: $id_found_items"
