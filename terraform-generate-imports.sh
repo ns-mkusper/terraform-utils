@@ -37,7 +37,7 @@ function found_terraform_resource_id() {
     attribute="$id:$account_id"
   elif [[ $entry == *.mysql_grant.* ]]; then
     # transform payments_adhoc_write@%:`payments`:* to payments_adhoc_write@%@payments@*
-    attribute=$(terraform state show -state="$state" "$entry" | awk '/^ *id[[:space:]]*=[[:space:]]*/ { gsub(/"/, "", $3); print $3; exit}' | sed -e 's/:\`/@/g' -e 's/\`/@*/g' -e 's/:/@*@/g'
+    attribute=$(terraform state show -state="$state" "$entry" | awk '/^ *id[[:space:]]*=[[:space:]]*/ { gsub(/"/, "", $3); print $3; exit}' | sed -e 's/:\`/@/g' -e 's/\`/@*/g' -e 's/:/@*@/g')
   else
     # Default to extracting id for all other resource types, removing quotes
     attribute=$(terraform state show -state="$state" "$entry" | awk '/^ *id[[:space:]]*=[[:space:]]*/ { gsub(/"/, "", $3); print $3; exit}')
