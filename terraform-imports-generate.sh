@@ -24,14 +24,23 @@ function found_terraform_resource_id() {
     policy_arn=$(terraform state show -state=$state "$entry" | awk '/^ *policy_arn[[:space:]]*=[[:space:]]*"/ {print $3; exit}' | sed 's/^"//;s/"$//')
     attribute="$role/$policy_arn"
   elif [[ $entry == *.newrelic_nrql_alert_condition.* ]]; then
-    # Extract role and policy_arn for aws_iam_role_policy_attachment resources, removing quotes
+    # Extract role and policy_arn for newrelic_nrql_alert_condition resources, removing quotes
     # See https://registry.terraform.io/providers/newrelic/newrelic/latest/docs/resources/nrql_alert_condition#import
     id=$(terraform state show -state=$state "$entry" | awk '/^ *id[[:space:]]*=[[:space:]]*"/ {print $3; exit}' | sed 's/^"//;s/"$//')
     type=$(terraform state show -state=$state "$entry" | awk '/^ *type[[:space:]]*=[[:space:]]*"/ {print $3; exit}' | sed 's/^"//;s/"$//')
     attribute="$id:$type"
+  elif [[ $entry == *.newrelic_alert_policy.* ]]; then
+    # Extract role and policy_arn for newrelic_alert_policy resources, removing quotes
+    # See https://registry.terraform.io/providers/newrelic/newrelic/latest/docs/resources/newrelic_alert_policy#import
+    id=$(terraform state show -state=$state "$entry" | awk '/^ *id[[:space:]]*=[[:space:]]*"/ {print $3; exit}' | sed 's/^"//;s/"$//')
+    account_id=$(terraform state show -state=$state "$entry" | awk '/^ *account_id[[:space:]]*=[[:space:]]*"/ {print $3; exit}' | sed 's/^"//;s/"$//')
+    attribute="$id:$account_id"
+  elif [[ $entry == *.mysql_grant.* ]]; then
+    # transform payments_adhoc_write@%:`payments`:* to payments_adhoc_write@%@payments@*
+    attribute=$(terraform state show -state=$state "$entry" | awk '/^ *id[[:space:]]*=[[:space:]]*"/ {print $3; exit}' | sed -e 's/^"//' -e 's/"$//' | sed -e 's/:\`/@/g' -e 's/\`:/@/g')
   else
     # Default to extracting id for all other resource types, removing quotes
-    attribute=$(terraform state show -state=$state "$entry" | awk '/^ *id[[:space:]]*=[[:space:]]*"/ {print $3; exit}' | sed 's/^"//;s/"$//' | sed 's/`//g')
+    attribute=$(terraform state show -state=$state "$entry" | awk '/^ *id[[:space:]]*=[[:space:]]*"/ {print $3; exit}' | sed 's/^"//;s/"$//')
   fi
 
   echo "$attribute"
@@ -78,7 +87,7 @@ echo "$LIST" | while IFS= read -r entry; do
   if [[ $entry == *".random_password."* ]]; then
     echo "$total_items Skipping entry: $entry"
     echo "# $entry" >> "$OUTPUT_FILE"
-    echo "# skip importing password" >> "$OUTPUT_FILE"
+    echo "# skip importing password, let it re-create because we are using aws_secretmanager and it will pick up new password" >> "$OUTPUT_FILE"
     echo "" >> "$OUTPUT_FILE"
     continue
   fi
