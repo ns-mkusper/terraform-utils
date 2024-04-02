@@ -8,10 +8,15 @@ if [ $# -ne 2 ]; then
 fi
 
 # File containing the list of Terraform state entries
-STATE_FILE=$1
+STATE_FILE=$(realpath "$1")
 
-# Output file where the results will be saved
-OUTPUT_FILE=$2
+# Prepare the output file by ensuring its directory exists
+OUTPUT_DIR=$(dirname "$2")
+mkdir -p "$OUTPUT_DIR" && touch "$2"
+OUTPUT_FILE=$(realpath "$2")
+
+# Use dirname to get the parent directory of the state file
+workingDir=$(dirname "$STATE_FILE")
 
 function found_terraform_resource_id() {
   entry=$1
@@ -61,8 +66,9 @@ total_found=$(echo "$LIST" | wc -l | xargs) # Total items found in the state fil
 # Initialize counters
 total_items=0
 
-echo "Start processing $total_found items found in the state file $STATE_FILE..."
+echo "Start processing $total_found items found in $STATE_FILE"
 
+pushd "$workingDir" > /dev/null
 # Read each line from the output of `terraform state list`
 echo "$LIST" | while IFS= read -r entry; do
   let total_items+=1
@@ -108,3 +114,4 @@ echo "$LIST" | while IFS= read -r entry; do
   echo "}" >> "$OUTPUT_FILE"
   echo "" >> "$OUTPUT_FILE"
 done
+popd > /dev/null
