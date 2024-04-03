@@ -21,14 +21,14 @@ You can clone the repo and run scripts individually or use the following one-lin
 ## Usage
 
 ```bash
-export TF_UTIL_VERSION=v1.0.3
+export TF_UTIL_VERSION=v1.2.0
 curl -sSL "https://raw.githubusercontent.com/amazingandyyy/terraform-utils/$TF_UTIL_VERSION/terraform-imports-generate.sh" | bash -s -- <state-file> <output-file>
 ```
 
 ### terraform list with ids
 
 ```bash
-export TF_UTIL_VERSION=v1.0.3
+export TF_UTIL_VERSION=v1.2.0
 curl -sSL "https://raw.githubusercontent.com/amazingandyyy/terraform-utils/$TF_UTIL_VERSION/terraform-state-list-ids.sh" | bash -s -- <state-file>
 ```
 
