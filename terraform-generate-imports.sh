@@ -107,8 +107,8 @@ echo "$LIST" | while IFS= read -r entry; do
   
   echo "$total_items Resource attribute of $entry is $attribute"
   
-  echo "# import for $entry" >> "$OUTPUT_FILE"
   echo "import {" >> "$OUTPUT_FILE"
+  echo "# previus: $entry" >> "$OUTPUT_FILE"
   echo "  to = $entry" >> "$OUTPUT_FILE"
   echo "  id = \"$attribute\"" >> "$OUTPUT_FILE"
   echo "}" >> "$OUTPUT_FILE"
