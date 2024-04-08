@@ -22,35 +22,58 @@ function found_terraform_resource_id() {
   entry=$1
   state=$2
   # Use terraform state show to get the details of the entry
-  if [[ $entry == *.aws_iam_role_policy_attachment.* ]]; then
+  if [[ $entry == aws_iam_role_policy_attachment.* ]] || [[ $entry == *.aws_iam_role_policy_attachment.* ]]; then
     # Extract role and policy_arn for aws_iam_role_policy_attachment resources, removing quotes
     # See https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy_attachment#import
-    role=$(terraform state show -state=$state "$entry" | awk '/^ *role[[:space:]]*=[[:space:]]*"/ {print $3; exit}' | sed 's/^"//;s/"$//')
-    policy_arn=$(terraform state show -state=$state "$entry" | awk '/^ *policy_arn[[:space:]]*=[[:space:]]*"/ {print $3; exit}' | sed 's/^"//;s/"$//')
+    role=$(terraform state show -state="$state" "$entry" | awk '/^ *role[[:space:]]*=[[:space:]]*/ { gsub(/"/, "", $3); print $3; exit}')
+    policy_arn=$(terraform state show -state="$state" "$entry" | awk '/^ *policy_arn[[:space:]]*=[[:space:]]*/ { gsub(/"/, "", $3); print $3; exit}')
     attribute="$role/$policy_arn"
-  elif [[ $entry == *.newrelic_nrql_alert_condition.* ]]; then
+  elif [[ $entry == newrelic_nrql_alert_condition.* ]] || [[ $entry == *.newrelic_nrql_alert_condition.* ]]; then
     # Extract role and policy_arn for newrelic_nrql_alert_condition resources, removing quotes
     # See https://registry.terraform.io/providers/newrelic/newrelic/latest/docs/resources/nrql_alert_condition#import
     id=$(terraform state show -state="$state" "$entry" | awk '/^ *id[[:space:]]*=[[:space:]]*/ { gsub(/"/, "", $3); print $3; exit}')
-    type=$(terraform state show -state=$state "$entry" | awk '/^ *type[[:space:]]*=[[:space:]]*"/ {print $3; exit}' | sed 's/^"//;s/"$//')
+    type=$(terraform state show -state="$state" "$entry" | awk '/^ *type[[:space:]]*=[[:space:]]*/ { gsub(/"/, "", $3); print $3; exit}')
     attribute="$id:$type"
-  elif [[ $entry == *.newrelic_alert_policy.* ]]; then
+  elif [[ $entry == aws_lambda_permission.* ]] || [[ $entry == *.aws_lambda_permission.* ]]; then
+    # Extract role and policy_arn for newrelic_nrql_alert_condition resources, removing quotes
+    # See https://registry.terraform.io/providers/newrelic/newrelic/latest/docs/resources/nrql_alert_condition#import
+    function_name=$(terraform state show -state="$state" "$entry" | awk '/^ *function_name[[:space:]]*=[[:space:]]*/ { gsub(/"/, "", $3); print $3; exit}')
+    statement_id=$(terraform state show -state="$state" "$entry" | awk '/^ *statement_id[[:space:]]*=[[:space:]]*/ { gsub(/"/, "", $3); print $3; exit}')
+    attribute="$function_name/$statement_id"
+  elif [[ $entry == newrelic_alert_policy.* ]] || [[ $entry == *.newrelic_alert_policy.* ]]; then
     # Extract role and policy_arn for newrelic_alert_policy resources, removing quotes
     # See https://registry.terraform.io/providers/newrelic/newrelic/latest/docs/resources/newrelic_alert_policy#import
     id=$(terraform state show -state="$state" "$entry" | awk '/^ *id[[:space:]]*=[[:space:]]*/ { gsub(/"/, "", $3); print $3; exit}')
     account_id=$(terraform state show -state="$state" "$entry" | awk '/^ *account_id[[:space:]]*=[[:space:]]*/ { gsub(/"/, "", $3); print $3; exit}')
     attribute="$id:$account_id"
-  elif [[ $entry == *.mysql_grant.* ]]; then
+  elif [[ $entry == mysql_grant.* ]] || [[ $entry == *.mysql_grant.* ]]; then
     # transform payments_adhoc_write@%:`payments`:* to payments_adhoc_write@%@payments@*
     attribute=$(terraform state show -state="$state" "$entry" | awk '/^ *id[[:space:]]*=[[:space:]]*/ { gsub(/"/, "", $3); print $3; exit}' | sed -e 's/:\`/@/g' -e 's/\`/@*/g' -e 's/:/@*@/g')
-  elif [[ $entry == *.aws_appautoscaling_policy.* ]]; then
+  elif [[ $entry == aws_security_group_rule.* ]] || [[ $entry == *.aws_security_group_rule.* ]]; then
+    # See https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/security_group_rule#import
+    read security_group_id type protocol from_port to_port cidr_blocks <<< $(terraform state show -state="$state" "$entry" | awk '
+        /^ *security_group_id[[:space:]]*=[[:space:]]*/ {gsub(/"/, "", $3); sgi=$3}
+        /^ *type[[:space:]]*=[[:space:]]*/ {gsub(/"/, "", $3); t=$3}
+        /^ *protocol[[:space:]]*=[[:space:]]*/ {gsub(/"/, "", $3); p=$3}
+        /^ *from_port[[:space:]]*=[[:space:]]*/ {gsub(/"/, "", $3); fp=$3}
+        /^ *to_port[[:space:]]*=[[:space:]]*/ {gsub(/"/, "", $3); tp=$3}
+        /^ *cidr_blocks[[:space:]]*=[[:space:]]*/ { inCidrBlock=1; next }
+        inCidrBlock && /^\]/ { inCidrBlock=0 }
+        inCidrBlock { gsub(/"/, "", $0); gsub(/,/, "", $0); cidr_blocks=cidr_blocks $0 " " }
+        /^ *source_security_group_id[[:space:]]*=[[:space:]]*/ {gsub(/"/, "", $3); ssgi=$3}
+        END {print sgi, t, p, fp, tp, cidr_blocks, ssgi}
+    ')
+    # Extract the first CIDR block from the list (assuming there might be more than one)
+    cidr_block=$(echo $cidr_blocks | awk '{print $1}')
+    # Construct the attribute string
+    attribute="${security_group_id}_${type}_${protocol}_${from_port}_${to_port}_${cidr_block}${source_security_group_id}"
+  elif [[ $entry == aws_appautoscaling_target.* ]] || [[ $entry == *.aws_appautoscaling_target.* ]]; then
     # See https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/appautoscaling_policy#import
     service_namespace=$(terraform state show -state="$state" "$entry" | awk '/^ *service_namespace[[:space:]]*=[[:space:]]*/ { gsub(/"/, "", $3); print $3; exit}')
     resource_id=$(terraform state show -state="$state" "$entry" | awk '/^ *resource_id[[:space:]]*=[[:space:]]*/ { gsub(/"/, "", $3); print $3; exit}')
     scalable_dimension=$(terraform state show -state="$state" "$entry" | awk '/^ *scalable_dimension[[:space:]]*=[[:space:]]*/ { gsub(/"/, "", $3); print $3; exit}')
-    name=$(terraform state show -state="$state" "$entry" | awk '/^ *name[[:space:]]*=[[:space:]]*/ { gsub(/"/, "", $3); print $3; exit}')
-    attribute="$service_namespace/$resource_id/$scalable_dimension/$name"
-  elif [[ $entry == *.aws_appautoscaling_target.* ]]; then
+    attribute="$service_namespace/$resource_id/$scalable_dimension"
+  elif [[ $entry == aws_appautoscaling_policy.* ]] || [[ $entry == *.aws_appautoscaling_policy.* ]]; then
     # See https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/appautoscaling_policy#import
     service_namespace=$(terraform state show -state="$state" "$entry" | awk '/^ *service_namespace[[:space:]]*=[[:space:]]*/ { gsub(/"/, "", $3); print $3; exit}')
     resource_id=$(terraform state show -state="$state" "$entry" | awk '/^ *resource_id[[:space:]]*=[[:space:]]*/ { gsub(/"/, "", $3); print $3; exit}')
@@ -107,6 +130,14 @@ echo "$LIST" | while IFS= read -r entry; do
     echo "$total_items Skipping entry: $entry"
     echo "# $entry" >> "$OUTPUT_FILE"
     echo "# skip importing password, let it re-create because we are using aws_secretmanager and it will pick up new password" >> "$OUTPUT_FILE"
+    echo "" >> "$OUTPUT_FILE"
+    continue
+  fi
+  
+  if [[ $entry == *".aws_iam_policy_attachment."* ]]; then
+    echo "$total_items Skipping entry: $entry"
+    echo "# $entry" >> "$OUTPUT_FILE"
+    echo "# skip importing skip due to aws_iam_policy_attachment doesn’t support import" >> "$OUTPUT_FILE"
     echo "" >> "$OUTPUT_FILE"
     continue
   fi
