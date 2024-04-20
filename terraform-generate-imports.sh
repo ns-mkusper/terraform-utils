@@ -35,8 +35,8 @@ function found_terraform_resource_id() {
     type=$(terraform state show -state="$state" "$entry" | awk '/^ *type[[:space:]]*=[[:space:]]*/ { gsub(/"/, "", $3); print $3; exit}')
     attribute="$id:$type"
   elif [[ $entry == aws_elasticsearch_domain.* ]] || [[ $entry == *.aws_elasticsearch_domain.* ]]; then
-    endpoint=$(terraform state show -state="$state" "$entry" | awk '/^ *endpoint[[:space:]]*=[[:space:]]*/ { gsub(/"/, "", $3); print $3; exit}')
-    attribute="$endpoint"
+    domain_name=$(terraform state show -state="$state" "$entry" | awk '/^ *domain_name[[:space:]]*=[[:space:]]*/ { gsub(/"/, "", $3); print $3; exit}')
+    attribute="$domain_name"
   elif [[ $entry == aws_lambda_permission.* ]] || [[ $entry == *.aws_lambda_permission.* ]]; then
     # Extract role and policy_arn for newrelic_nrql_alert_condition resources, removing quotes
     # See https://registry.terraform.io/providers/newrelic/newrelic/latest/docs/resources/nrql_alert_condition#import
