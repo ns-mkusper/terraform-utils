@@ -37,6 +37,17 @@ function found_terraform_resource_id() {
   elif [[ $entry == aws_elasticsearch_domain.* ]] || [[ $entry == *.aws_elasticsearch_domain.* ]]; then
     domain_name=$(terraform state show -state="$state" "$entry" | awk '/^ *domain_name[[:space:]]*=[[:space:]]*/ { gsub(/"/, "", $3); print $3; exit}')
     attribute="$domain_name"
+  elif [[ $entry == aws_cloudwatch_metric_alarm.* ]] || [[ $entry == *.aws_cloudwatch_metric_alarm.* ]]; then
+    alarm_name=$(terraform state show -state="$state" "$entry" | \
+    awk -F'=' '{
+        # Strip leading and trailing spaces and quotes from the second field
+        if (/^ *alarm_name[[:space:]]*=/) {
+            gsub(/^ *"| *"$/, "", $2); # Remove leading and trailing spaces/quotes from value
+            print $2;
+            exit; # Exit after printing to avoid processing unnecessary lines
+        }
+    }')
+    attribute="$alarm_name"
   elif [[ $entry == aws_lambda_permission.* ]] || [[ $entry == *.aws_lambda_permission.* ]]; then
     # Extract role and policy_arn for newrelic_nrql_alert_condition resources, removing quotes
     # See https://registry.terraform.io/providers/newrelic/newrelic/latest/docs/resources/nrql_alert_condition#import
