@@ -18,7 +18,7 @@ github_search_url="https://github.com/search?q=org:$org+source+app.terraform.io%
 echo Repository: $repo
 echo Organization: $org
 echo ========================
-echo Registry:https://app.terraform.io/app/$org/registry/modules/private/$org/$usage
-echo Repo:\\t "https://github.com/$org/$repo"
-echo Usage:\\t $github_search_url
+echo Registry: https://app.terraform.io/app/$org/registry/modules/private/$org/$usage
+echo Repo:     https://github.com/$org/$repo
+echo Usage:    $github_search_url
 echo ========================
