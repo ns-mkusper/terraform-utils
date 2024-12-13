@@ -107,6 +107,12 @@ function found_terraform_resource_id() {
         scalable_dimension=$(terraform state show -state="$state" "$entry" | awk '/^ *scalable_dimension[[:space:]]*=[[:space:]]*/ { gsub(/"/, "", $3); print $3; exit}')
         name=$(terraform state show -state="$state" "$entry" | awk '/^ *name[[:space:]]*=[[:space:]]*/ { gsub(/"/, "", $3); print $3; exit}')
         attribute="$service_namespace/$resource_id/$scalable_dimension/$name"
+    elif [[ $entry == aws_ecs_task_definition.* ]] ||
+        [[ $entry == *.aws_ecs_task_definition.* ]]; then
+        arn=$(terraform state show -state="$state" "$entry" | awk '/^ *arn[[:space:]]*=[[:space:]]*/ { gsub(/"/, "", $3); print $3; exit}')
+        echo terraform state show -state="$state" "$entry" | awk '/^ *arn[[:space:]]*=[[:space:]]*/ { gsub(/"/, "", $3); print $3; exit}'
+        attribute="$arn"
+
     else
         # Default to extracting id for all other resource types, removing quotes
         attribute=$(terraform state show -state="$state" "$entry" | awk '/^ *id[[:space:]]*=[[:space:]]*/ { gsub(/"/, "", $3); print $3; exit}')
