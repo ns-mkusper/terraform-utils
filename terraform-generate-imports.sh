@@ -89,10 +89,10 @@ function found_terraform_resource_id() {
         cidr_block=$(echo $cidr_blocks | awk '{print $1}')
         # Construct the attribute string
         attribute="${security_group_id}_${type}_${protocol}_${from_port}_${to_port}_${cidr_block}${source_security_group_id}"
-    elif [[ $entry == aws_security_group_rule.* ]] || [[ $entry == *.aws_security_group_rule.* ]]; then
-        # See https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/security_group_rule#import
-        arn=$(terraform state show -state="$state" "$entry" | awk '/^ *arn[[:space:]]*=[[:space:]]*/ { gsub(/"/, "", $3); print $3; exit}')
-        attribute="$arn"
+    # elif [[ $entry == aws_security_group_rule.* ]] || [[ $entry == *.aws_security_group_rule.* ]]; then
+    #     # See https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/security_group_rule#import
+    #     arn=$(terraform state show -state="$state" "$entry" | awk '/^ *arn[[:space:]]*=[[:space:]]*/ { gsub(/"/, "", $3); print $3; exit}')
+    #     attribute="$arn"
 
     elif [[ $entry == aws_appautoscaling_target.* ]] || [[ $entry == *.aws_appautoscaling_target.* ]]; then
         # See https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/appautoscaling_policy#import
