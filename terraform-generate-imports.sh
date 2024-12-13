@@ -21,7 +21,7 @@ workingDir=$(dirname "$LIST_FILE")
 function found_terraform_resource_id() {
     entry=$1
     state=$2
-    echo $entry $state
+    echo $entry $state >>log
     # Use terraform state show to get the details of the entry
     if [[ $entry == aws_iam_role_policy_attachment.* ]] || [[ $entry == *.aws_iam_role_policy_attachment.* ]]; then
         # Extract role and policy_arn for aws_iam_role_policy_attachment resources, removing quotes
@@ -32,7 +32,7 @@ function found_terraform_resource_id() {
     elif [[ $entry == aws_ecs_task_definition.* ]] ||
         [[ $entry == *.aws_ecs_task_definition.* ]]; then
         arn=$(terraform state show -state="$state" "$entry" | awk '/^ *arn[[:space:]]*=[[:space:]]*/ { gsub(/"/, "", $3); print $3; exit}')
-        echo terraform state show -state="$state" "$entry" | awk '/^ *arn[[:space:]]*=[[:space:]]*/ { gsub(/"/, "", $3); print $3; exit}'
+        echo terraform state show -state="$state" "$entry" | awk '/^ *arn[[:space:]]*=[[:space:]]*/ { gsub(/"/, "", $3); print $3; exit}' >>log
         attribute="$arn"
 
     elif [[ $entry == newrelic_nrql_alert_condition.* ]] || [[ $entry == *.newrelic_nrql_alert_condition.* ]]; then
