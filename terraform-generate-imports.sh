@@ -21,6 +21,7 @@ workingDir=$(dirname "$LIST_FILE")
 function found_terraform_resource_id() {
     entry=$1
     state=$2
+    echo $entry $state
     # Use terraform state show to get the details of the entry
     if [[ $entry == aws_iam_role_policy_attachment.* ]] || [[ $entry == *.aws_iam_role_policy_attachment.* ]]; then
         # Extract role and policy_arn for aws_iam_role_policy_attachment resources, removing quotes
